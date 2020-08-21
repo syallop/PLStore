@@ -1,0 +1,88 @@
+name:                PLStore
+version:             0.1.0.0
+synopsis:            Datastore interface and definitions for storing PL code
+description:         Datastore interface and in-memory, file and nested
+                     implementations for storing PL code.
+-- license:             
+author:              Samuel A. Yallop
+maintainer:          syallop@gmail.com
+copyright:           Samuel A. Yallop
+category:            PL
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     PLStore
+                     , PLStore.Code
+                     , PLStore.File
+                     , PLStore.File.Path
+                     , PLStore.Hash
+                     , PLStore.Memory
+                     , PLStore.Nested
+                     , PLStore.Short
+
+  -- other-modules:       
+  other-extensions:    OverloadedStrings
+                     , GeneralizedNewtypeDeriving
+                     , LambdaCase
+
+  build-depends:       base >= 4.12
+                     , containers >=0.5
+
+                     , PL >= 0.2
+                     , PLGrammar  >= 0.4
+                     , PLPrinter  >= 0.3
+                     , Reversible >= 0.1
+
+                     , memory
+                     , hedgehog
+                     , hashing
+                     , directory-tree
+                     , filepath
+                     , filepath-bytestring
+                     , bytestring
+                     , utf8-string
+                     , base58-bytestring
+                     , hspec
+                     , quickcheck-instances
+                     , system-fileio
+                     , semigroups
+                     , directory
+                     , text
+                     , pretty-tree
+                     , ghc-prim
+
+  -- hs-source-dirs:      
+  default-language:    Haskell2010
+
+  ghc-options: -fwarn-incomplete-patterns -Werror=incomplete-patterns
+
+test-suite hspec
+  type:              exitcode-stdio-1.0
+  main-is:           Spec.hs
+  hs-source-dirs:    Test
+
+  other-modules:     PLStore.Test.File.PathSpec
+
+  build-depends:     base >=4.7
+                   , PL
+                   , PLStore
+                   , PLGrammar  >= 0.4
+                   , PLPrinter  >= 0.3
+                   , Reversible >= 0.1
+
+                   , QuickCheck
+                   , containers >=0.5
+                   , hedgehog
+                   , hspec
+                   , quickcheck-instances
+                   , semigroups
+                   , text
+                   , ghc-prim
+
+  default-language:  Haskell2010
+
+  other-extensions:  OverloadedStrings
+                   , GeneralizedNewtypeDeriving
+                   , LambdaCase
+
