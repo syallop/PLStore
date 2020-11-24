@@ -47,7 +47,7 @@ data StoreResult v
      { _oldValue :: Set v
      }
   | AlreadyStored -- No action as the value is already stored.
-  deriving Show
+  deriving (Show, Eq)
 
 instance Ord v => Monoid (StoreResult v) where
   mempty   = Successfully

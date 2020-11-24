@@ -17,6 +17,7 @@ library
                      , PLStore.File
                      , PLStore.File.Path
                      , PLStore.Hash
+                     , PLStore.DHT
                      , PLStore.Memory
                      , PLStore.Nested
                      , PLStore.Short
@@ -33,8 +34,11 @@ library
                      , PLGrammar  >= 0.4
                      , PLPrinter  >= 0.3
                      , Reversible >= 0.1
+                     , DHT        >= 0.3
+                     , DHT-SimpleNode >= 0.3
 
                      , memory
+                     , time
                      , hedgehog
                      , hashing
                      , directory-tree
@@ -55,6 +59,7 @@ library
   -- hs-source-dirs:      
   default-language:    Haskell2010
 
+  ghc-options: -threaded -rtsopts
   ghc-options: -fwarn-incomplete-patterns -Werror=incomplete-patterns
 
 test-suite hspec
@@ -63,6 +68,7 @@ test-suite hspec
   hs-source-dirs:    Test
 
   other-modules:     PLStore.Test.File.PathSpec
+                   , PLStore.Test.DHTSpec
 
   build-depends:     base >=4.7
                    , PL
@@ -75,13 +81,14 @@ test-suite hspec
                    , containers >=0.5
                    , hedgehog
                    , hspec
+                   , bytestring
                    , quickcheck-instances
                    , semigroups
                    , text
                    , ghc-prim
 
   default-language:  Haskell2010
-
+  ghc-options: -threaded -rtsopts
   other-extensions:  OverloadedStrings
                    , GeneralizedNewtypeDeriving
                    , LambdaCase
