@@ -1,8 +1,7 @@
-name:                PLStore
+name:                PLStore-File
 version:             0.1.0.0
-synopsis:            Datastore interface and definitions for storing PL code
-description:         Datastore interface and in-memory, file and nested
-                     implementations for storing PL code.
+synopsis:            Definitions for storing PL values in the file system
+description:
 -- license:             
 author:              Samuel A. Yallop
 maintainer:          syallop@gmail.com
@@ -12,15 +11,8 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     PLStore
-                     , PLStore.Code
-                     , PLStore.File
+  exposed-modules:     PLStore.File
                      , PLStore.File.Path
-                     , PLStore.Hash
-                     , PLStore.DHT
-                     , PLStore.Memory
-                     , PLStore.Nested
-                     , PLStore.Short
 
   -- other-modules:       
   other-extensions:    OverloadedStrings
@@ -31,11 +23,10 @@ library
                      , containers >=0.5
 
                      , PL >= 0.2
+                     , PLStore
                      , PLGrammar  >= 0.4
                      , PLPrinter  >= 0.3
                      , Reversible >= 0.1
-                     , DHT        >= 0.3
-                     , DHT-SimpleNode >= 0.3
 
                      , memory
                      , time
@@ -68,11 +59,11 @@ test-suite hspec
   hs-source-dirs:    Test
 
   other-modules:     PLStore.Test.File.PathSpec
-                   , PLStore.Test.DHTSpec
 
   build-depends:     base >=4.7
                    , PL
                    , PLStore
+                   , PLStore-File
                    , PLGrammar  >= 0.4
                    , PLPrinter  >= 0.3
                    , Reversible >= 0.1

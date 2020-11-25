@@ -27,7 +27,6 @@ module PLStore.DHT
 
 -- PLStore
 import PLStore
-import PLStore.File.Path
 
 -- Other PL
 import DHT

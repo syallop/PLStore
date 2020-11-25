@@ -1,0 +1,86 @@
+name:                PLStore-DHT
+version:             0.1.0.0
+synopsis:            Definitions for storing PL values in a Distributed Hash Table.
+description:
+-- license:             
+author:              Samuel A. Yallop
+maintainer:          syallop@gmail.com
+copyright:           Samuel A. Yallop
+category:            PL
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     PLStore.DHT
+  -- other-modules:       
+  other-extensions:    OverloadedStrings
+                     , GeneralizedNewtypeDeriving
+                     , LambdaCase
+
+  build-depends:       base >= 4.12
+                     , containers >=0.5
+
+                     , PL >= 0.2
+                     , PLStore
+                     , PLGrammar  >= 0.4
+                     , PLPrinter  >= 0.3
+                     , Reversible >= 0.1
+                     , DHT        >= 0.3
+                     , DHT-SimpleNode >= 0.3
+
+                     , memory
+                     , time
+                     , hedgehog
+                     , hashing
+                     , directory-tree
+                     , filepath
+                     , filepath-bytestring
+                     , bytestring
+                     , utf8-string
+                     , base58-bytestring
+                     , hspec
+                     , quickcheck-instances
+                     , system-fileio
+                     , semigroups
+                     , directory
+                     , text
+                     , pretty-tree
+                     , ghc-prim
+
+  -- hs-source-dirs:      
+  default-language:    Haskell2010
+
+  ghc-options: -threaded -rtsopts
+  ghc-options: -fwarn-incomplete-patterns -Werror=incomplete-patterns
+
+test-suite hspec
+  type:              exitcode-stdio-1.0
+  main-is:           Spec.hs
+  hs-source-dirs:    Test
+
+  other-modules:     PLStore.Test.DHTSpec
+
+  build-depends:     base >=4.7
+                   , PL
+                   , PLStore
+                   , PLStore-DHT
+                   , PLGrammar  >= 0.4
+                   , PLPrinter  >= 0.3
+                   , Reversible >= 0.1
+
+                   , QuickCheck
+                   , containers >=0.5
+                   , hedgehog
+                   , hspec
+                   , bytestring
+                   , quickcheck-instances
+                   , semigroups
+                   , text
+                   , ghc-prim
+
+  default-language:  Haskell2010
+  ghc-options: -threaded -rtsopts
+  other-extensions:  OverloadedStrings
+                   , GeneralizedNewtypeDeriving
+                   , LambdaCase
+

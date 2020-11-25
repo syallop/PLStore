@@ -1,7 +1,11 @@
 resolver: lts-15.11
 extra-package-dbs: []
 packages:
-- .
+- Store
+- Nested
+- Memory
+- File
+- DHT
 extra-deps:
 - git: https://github.com/syallop/PLCore
   commit: aeb09392e2f97be382273fc8fe3600f8a3efa64b

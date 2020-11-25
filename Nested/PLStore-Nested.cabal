@@ -1,0 +1,51 @@
+name:                PLStore-Nested
+version:             0.1.0.0
+synopsis:            Definitions for storing PL code in nested stores.
+description:
+-- license:             
+author:              Samuel A. Yallop
+maintainer:          syallop@gmail.com
+copyright:           Samuel A. Yallop
+category:            PL
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     PLStore.Nested
+  -- other-modules:       
+  other-extensions:    OverloadedStrings
+                     , GeneralizedNewtypeDeriving
+                     , LambdaCase
+
+  build-depends:       base >= 4.12
+                     , containers >=0.5
+
+                     , PL >= 0.2
+                     , PLGrammar  >= 0.4
+                     , PLPrinter  >= 0.3
+                     , Reversible >= 0.1
+                     , memory
+                     , time
+                     , hedgehog
+                     , hashing
+                     , directory-tree
+                     , filepath
+                     , filepath-bytestring
+                     , bytestring
+                     , utf8-string
+                     , base58-bytestring
+                     , hspec
+                     , quickcheck-instances
+                     , system-fileio
+                     , semigroups
+                     , directory
+                     , text
+                     , pretty-tree
+                     , ghc-prim
+
+  -- hs-source-dirs:      
+  default-language:    Haskell2010
+
+  ghc-options: -threaded -rtsopts
+  ghc-options: -fwarn-incomplete-patterns -Werror=incomplete-patterns
+
