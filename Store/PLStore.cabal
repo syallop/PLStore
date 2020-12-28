@@ -12,8 +12,6 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     PLStore
-                     , PLStore.Code
-                     , PLStore.Hash
                      , PLStore.Short
 
   -- other-modules:       
@@ -24,12 +22,11 @@ library
   build-depends:       base >= 4.12
                      , containers >=0.5
 
-                     , PL >= 0.2
+                     , PLHash
                      , PLGrammar  >= 0.4
                      , PLPrinter  >= 0.3
                      , Reversible >= 0.1
 
-                     , memory
                      , time
                      , hedgehog
                      , hashing

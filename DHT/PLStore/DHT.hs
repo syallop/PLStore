@@ -28,14 +28,10 @@ module PLStore.DHT
 -- PLStore
 import PLStore
 
--- Other PL
 import DHT
 import DHT.Core
 import DHT.SimpleNode
 
-import PL.Serialize
-import PL.Error
-import PL.FixPhase
 import PLPrinter.Doc
 import Reversible.Iso
 
@@ -74,7 +70,7 @@ data DHTStore k v = DHTStore
   , _serializeDHTKey     :: k -> Strict.ByteString
 
   , _serializeDHTValue   :: v -> Strict.ByteString
-  , _deserializeDHTValue :: forall phase. Strict.ByteString -> Either (ErrorFor phase) v
+  , _deserializeDHTValue :: Strict.ByteString -> Either Doc v
 
   , _hashSize            :: Int
   }
@@ -83,9 +79,12 @@ data DHTStore k v = DHTStore
 -- commands until it is asked to close.
 newDHTStore
   :: forall k v
-   . (Show k, Serialize k, Serialize v)
-  => IO (DHTStore k v)
-newDHTStore = do
+   . Show k
+  => (k -> Strict.ByteString)
+  -> (v -> Strict.ByteString)
+  -> (Strict.ByteString -> Either Doc v)
+  -> IO (DHTStore k v)
+newDHTStore serializeKey serializeValue deserializeValue = do
   -- Hardcode some configuration
   let ourAddress        = fromParts (IPV4 "127.0.0.1") [UDP 6470]
       hashSize          = 8
@@ -104,10 +103,9 @@ newDHTStore = do
   let dhtStore = DHTStore
         { _eventChan       = eventChan
 
-        , _serializeDHTKey = serialize
-
-        , _serializeDHTValue   = serialize
-        , _deserializeDHTValue = deserialize
+        , _serializeDHTKey     = serializeKey
+        , _serializeDHTValue   = serializeValue
+        , _deserializeDHTValue = deserializeValue
 
         , _hashSize = hashSize
         }
@@ -132,7 +130,7 @@ instance Store DHTStore k v where
 -- A request to the dht store is a command that should return some response
 -- value 'r' by writing it to the provided response mvar.
 data DHTStoreRequest k v = forall phase r. DHTStoreRequest
-  { _responseMVar   :: MVar (Either (ErrorFor phase) r) -- ^ Space in which to write the response that can be waited upon.
+  { _responseMVar   :: MVar (Either Doc r) -- ^ Space in which to write the response that can be waited upon.
   , _requestCommand :: DHTStoreCommand k v r
   }
 
@@ -197,7 +195,7 @@ handleDHTCommands dhtStore = do
 lookupInDHT
   :: DHTStore k v
   -> k
-  -> IO (Either (ErrorFor phase) (Maybe v))
+  -> IO (Either Doc (Maybe v))
 lookupInDHT dhtStore key = do
   response <- newEmptyMVar
   writeChan (_eventChan dhtStore) $ DHTStoreRequest response $ LookupDHT key
@@ -208,7 +206,7 @@ storeInDHT
   :: DHTStore k v
   -> k
   -> v
-  -> IO (Either (ErrorFor phase) (StoreResult v))
+  -> IO (Either Doc (StoreResult v))
 storeInDHT dhtStore key value = do
   response <- newEmptyMVar
   writeChan (_eventChan dhtStore) $ DHTStoreRequest response $ StoreDHT key value
@@ -218,7 +216,7 @@ storeInDHT dhtStore key value = do
 logInDHT
   :: DHTStore k v
   -> Text
-  -> IO (Either (ErrorFor phase) ())
+  -> IO (Either Doc ())
 logInDHT dhtStore msg = do
   response <- newEmptyMVar
   writeChan (_eventChan dhtStore) $ DHTStoreRequest response $ LogDHT msg
@@ -229,7 +227,7 @@ handleLookup
   :: Show k
   => k
   -> DHTStore k v
-  -> DHT IO (Either (ErrorFor phase) (Maybe v))
+  -> DHT IO (Either Doc (Maybe v))
 handleLookup key dhtStore = do
   let keyID = generateKeyID dhtStore key
   -- TODO: Report contacts
@@ -252,7 +250,7 @@ handleStore
   => k
   -> v
   -> DHTStore k v
-  -> DHT IO (Either (ErrorFor phase) (StoreResult v))
+  -> DHT IO (Either Doc (StoreResult v))
 handleStore key value dhtStore  = do
   let serializedKey   = Lazy.fromStrict . (_serializeDHTKey   dhtStore) $ key
   let serializedValue = Lazy.fromStrict . (_serializeDHTValue dhtStore) $ value

@@ -9,12 +9,7 @@ import Test.Hspec
 import PLStore.File.Path
 
 -- Other PL
-import PL.Error
-import PL.Expr
-import PL.FixPhase
-import PL.Hash
-import PL.Type
-import PL.Var
+import PLHash
 import PLGrammar
 import PLPrinter.Doc
 import Reversible
@@ -28,7 +23,7 @@ data GeneratePathTestCase = GeneratePathTestCase
   { _generateTestName :: Text
   , _hashBytesBase58  :: Text
   , _generatePattern  :: PathPattern Hash
-  , _expectPath       :: Either Error FilePath
+  , _expectPath       :: Either Doc FilePath
   }
 
 testGeneration
@@ -40,7 +35,7 @@ testGeneration g = describe (Text.unpack . _generateTestName $ g) $ do
 
   it "Generates the expected path" $ do
     case mkBase58 SHA512 . _hashBytesBase58 $ g of
-      Left (err :: Error)
+      Left (err :: Doc)
         -> fail . show $ err
 
       Right h

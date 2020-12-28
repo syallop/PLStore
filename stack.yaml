@@ -1,14 +1,18 @@
 resolver: lts-15.11
 extra-package-dbs: []
 packages:
+# Interfaces for Store/ ShortStore
 - Store
+# Implementations of Store/ ShortStore
 - Nested
 - Memory
 - File
 - DHT
+# Implementation of HashStore
+- Hash
 extra-deps:
-- git: https://github.com/syallop/PLCore
-  commit: aeb09392e2f97be382273fc8fe3600f8a3efa64b
+- git: https://github.com/syallop/PLHash
+  commit: 8b2c8d586f55813851740dc64e24677db42eef77
 - git: https://github.com/syallop/PLLabel
   commit: 9433cf7963e43b4df06f57939218956c3d2dacc4
 - git: https://github.com/syallop/Reversible

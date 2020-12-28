@@ -19,9 +19,9 @@ module PLStore.Short
 -- PLStore
 import PLStore
 
--- Other PL
-import PL.Error
-import PL.Hash
+-- External PL
+import PLPrinter
+import PLHash.Short
 
 -- External
 import Data.Text (Text)
@@ -34,68 +34,11 @@ class (Store s k v, Shortable k shortK) => ShortStore s k shortK v where
   largerKeys
     :: s k v
     -> shortK
-    -> IO (Either (ErrorFor phase) (s k v, [k]))
+    -> IO (Either Doc (s k v, [k]))
 
   -- | Given a regualar key, return the shortest unambiguous key.
   shortenKey
     :: s k v
     -> k
-    -> IO (Either (ErrorFor phase) (s k v, shortK))
-
--- Shortable maps a long type to a shorter version.
-class Shortable long short | long -> short, short -> long where
-  -- Longest shared prefix of two keys
-  -- Shortest unambiguous key against a second key.
-  -- E.G.
-  -- aaaabcd
-  -- aaaaxyz
-  -- = aaaab
-
-  -- Shorten something against another. E.G.:
-  -- abcDEF
-  -- abXYX
-  -- =
-  -- abc
-  shortenAgainst :: long -> Maybe long -> short
-
-  -- For comparing the length of shorts to each other
-  shortLength :: short -> Int
-
-  isShortened :: short -> long -> Bool
-
-  -- Coerce a long thing into a short thing. Not guaranteed to actually make the
-  -- thing shorter.
-  toShort :: long -> short
-
-instance Shortable BS.ByteString BS.ByteString where
-  shortLength = BS.length
-
-  toShort bs = bs
-
-  isShortened = BS.isPrefixOf
-
-  shortenAgainst sourceBs Nothing = case BS.uncons sourceBs of
-    Nothing
-      -> ""
-
-    Just (w,_)
-      -> BS.singleton w
-
-  shortenAgainst sourceBs (Just againstBs) =
-    let (common, uncommon) = span (\(a,b) -> a == b) $ BS.zip sourceBs againstBs
-     in BS.pack . fmap fst $ case uncommon of
-          -- Two bytestrings are the same.
-          []
-            -> common
-
-          (u:_)
-            -> common ++ [u]
-
-instance Shortable Text Text where
-  shortLength = shortLength . encodeUtf8
-
-  isShortened short long = isShortened (encodeUtf8 short) (encodeUtf8 long)
-  toShort = decodeUtf8 . toShort . encodeUtf8
-
-  shortenAgainst sourceBs againstBs = decodeUtf8 $ shortenAgainst (encodeUtf8 sourceBs) (fmap encodeUtf8 againstBs)
+    -> IO (Either Doc (s k v, shortK))
 

@@ -8,12 +8,11 @@ import PLStore.DHT
 import PLStore
 
 -- Other PL
-import PL.Error
-import PL.Expr
-import PL.FixPhase
-import PL.TypeCtx
+import PLPrinter.Doc
 
+import Data.ByteString (ByteString)
 import Data.Text
+import Data.Text.Encoding
 import Control.Concurrent
 
 type TestKey = Text
@@ -22,13 +21,27 @@ type TestValue = Text
 
 type TestDHTStore = DHTStore TestKey TestValue
 
-newTestDHT :: IO TestDHTStore
-newTestDHT = newDHTStore
+serialize :: Text -> ByteString
+serialize   = encodeUtf8
 
-testLookup :: TestDHTStore -> TestKey -> IO (Either Error (Maybe TestValue))
+deserialize :: ByteString -> Either Doc Text
+deserialize = either (\unicodeErr
+                       -> Left . mconcat $
+                               [ text "Failed to deserialize text with unicode error:"
+                               , lineBreak
+                               , string . show $ unicodeErr
+                               ]
+                     )
+                     Right
+            . decodeUtf8'
+
+newTestDHT :: IO TestDHTStore
+newTestDHT = newDHTStore serialize serialize deserialize
+
+testLookup :: TestDHTStore -> TestKey -> IO (Either Doc (Maybe TestValue))
 testLookup dht key = lookupInDHT dht key
 
-testStore :: TestDHTStore -> TestKey -> TestValue -> IO (Either Error (StoreResult TestValue))
+testStore :: TestDHTStore -> TestKey -> TestValue -> IO (Either Doc (StoreResult TestValue))
 testStore dht key value = storeInDHT dht key value
 
 spec :: Spec

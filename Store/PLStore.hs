@@ -28,6 +28,8 @@ module PLStore
 
 import Prelude hiding (lookup)
 
+import PLPrinter.Doc
+
 import Data.Text (Text)
 
 import Data.Map (Map)
@@ -36,8 +38,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Monoid
 
-import PL.Hash
-import PL.Error
 import qualified Data.ByteString as BS
 
 -- | The result of successfully storing something is a StoreResult.
@@ -90,7 +90,7 @@ class Store s k v where
     :: s k v
     -> k
     -> v
-    -> IO (Either (ErrorFor phase) (s k v, StoreResult v))
+    -> IO (Either Doc (s k v, StoreResult v))
 
   -- | Lookup a value 'v' by it's key 'k' in the storage container 's'.
   -- An updated container is returned in the success case to allow the contain
@@ -99,5 +99,5 @@ class Store s k v where
   lookup
     :: s k v
     -> k
-    -> IO (Either (ErrorFor phase) (s k v, Maybe v))
+    -> IO (Either Doc (s k v, Maybe v))
 

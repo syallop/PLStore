@@ -35,7 +35,6 @@ module PLStore.File.Path
   where
 
 -- PL
-import PL.Error
 import PLGrammar
 import PLPrinter.Doc
 import Reversible
@@ -108,14 +107,14 @@ generatePath
   :: Show k
   => k
   -> PathPattern k
-  -> Either (ErrorFor phase) FilePath
+  -> Either Doc FilePath
 generatePath k pattern =
   let PathGenerator f = toPathGenerator pattern
    in Text.unpack <$> f k
 
 -- A PathGenerator transforms some key into a possible path where it can be
 -- stored.
-newtype PathGenerator k = PathGenerator (forall phase. k -> Either (ErrorFor phase) Text)
+newtype PathGenerator k = PathGenerator (forall phase. k -> Either Doc Text)
 
 -- Convert a PathPattern into a Generator by interpreting it 'backwards'.
 toPathGenerator
@@ -137,7 +136,7 @@ toPathGenerator (Reversible g) = case g of
   RPure a
     -> PathGenerator $ \a' -> if a == a'
                                 then Right mempty
-                                else Left . EMsg . mconcat $
+                                else Left . mconcat $
                                        [ text "When generating path we expected to see:"
                                        , lineBreak
                                        , indent1 . string . show $ a
@@ -148,7 +147,7 @@ toPathGenerator (Reversible g) = case g of
                                        ]
 
   REmpty
-    -> PathGenerator $ \a -> Left . EMsg . mconcat $
+    -> PathGenerator $ \a -> Left . mconcat $
                                [ text "Aborted generating path. Next input:"
                                , lineBreak
                                , indent1 . string . show $ a
@@ -167,7 +166,7 @@ toPathGenerator (Reversible g) = case g of
     -> PathGenerator $ let PathGenerator p = toPathGenerator ga
                         in \a -> case backwards iso a of
                                    Nothing
-                                     -> Left . EMsg . mconcat $
+                                     -> Left . mconcat $
                                           [ text $ "Failed to apply function in reverse to:"
                                           , indent1 . string . show $ a
                                           ]

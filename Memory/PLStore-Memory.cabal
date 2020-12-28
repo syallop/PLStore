@@ -20,7 +20,6 @@ library
   build-depends:       base >= 4.12
                      , containers >=0.5
 
-                     , PL >= 0.2
                      , PLStore
                      , PLGrammar  >= 0.4
                      , PLPrinter  >= 0.3

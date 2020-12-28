@@ -36,8 +36,6 @@ import PLStore.Short
 import PLStore.File.Path
 
 -- Other PL
-import PL.Serialize
-import PL.Error
 import PLPrinter.Doc
 import Reversible.Iso
 
@@ -71,7 +69,7 @@ data FileStore k v = Ord v => FileStore
   { _subDirectories       :: [ByteString]
   , _filePattern          :: PathPattern k
   , _serializeFileBytes   :: v -> ByteString
-  , _deserializeFileBytes :: forall phase. ByteString -> Either (ErrorFor phase) v
+  , _deserializeFileBytes :: ByteString -> Either Doc v
   , _valuesEqual          :: v -> v -> Bool
   }
 
@@ -93,22 +91,25 @@ instance Show (FileStore k v) where
 -- Result path: some/prefix/KEY/NAM/EBR/OKE/N/file
 newSimpleFileStore
   :: forall k v
-   . ( Serialize k
-     , Serialize v
-     , Show k
+   . ( Show k
      , Eq v
      , Ord v
      )
   => [ByteString] -- ^ Optional subdirectory to store under
+  -> (k -> ByteString)
+  -> (ByteString -> Either Doc k)
+  -> (v -> ByteString)
+  -> (ByteString -> Either Doc v)
   -> Int           -- ^ Fix key length
   -> Text
   -> FileStore k v
-newSimpleFileStore subDirs keyLength fileName = newFileStore subDirs (mkPathPattern iso keyLength fileName) serialize deserialize (==)
+newSimpleFileStore subDirs serializeKey deserializeKey serializeBytes deserializeBytes keyLength fileName =
+  newFileStore subDirs (mkPathPattern iso keyLength fileName) serializeBytes deserializeBytes (==)
   where
     iso :: Iso Text k
     iso = Iso
-      {_forwards  = \txt-> either (const Nothing) Just . deserialize . encodeUtf8 $ txt
-      ,_backwards = Just . decodeUtf8 . serialize
+      {_forwards  = \txt-> either (const Nothing) Just . deserializeKey . encodeUtf8 $ txt
+      ,_backwards = Just . decodeUtf8 . serializeKey
       }
 
 newFileStore
@@ -116,7 +117,7 @@ newFileStore
   => [ByteString]
   -> PathPattern k
   -> (v -> ByteString)
-  -> (forall phase. ByteString -> Either (ErrorFor phase) v)
+  -> (ByteString -> Either Doc v)
   -> (v -> v -> Bool)
   -> FileStore k v
 newFileStore subDirs filePattern serializeBytes deserializeBytes valuesEqual = FileStore
@@ -143,7 +144,7 @@ generateFullPath
   :: Show k
   => k
   -> FileStore k v
-  -> Either (ErrorFor phase) FilePath
+  -> Either Doc FilePath
 generateFullPath key f = case generatePath key (_filePattern f) of
   Left err
     -> Left err
@@ -160,15 +161,17 @@ storeAsFile
   => FileStore k v
   -> k
   -> v
-  -> IO (Either (ErrorFor phase) (FileStore k v, StoreResult v))
+  -> IO (Either Doc (FileStore k v, StoreResult v))
 storeAsFile filestore key value = do
   -- TODO: Consider mapping relevant filesystem exceptions to Nothing.
   case generateFullPath key filestore of
     Left err
-      -> pure . Left . EContext (EMsg . mconcat $ [ text "File store cannot generate path for key:"
-                                                  , lineBreak
-                                                  , indent1 . string . show $ key
-                                                  ]) $ err
+      -> pure . Left . mconcat $ [ text "File store cannot generate path for key:"
+                                 , lineBreak
+                                 , indent1 . string . show $ key
+                                 , lineBreak
+                                 , indent1 err
+                                 ]
 
     Right keyPath
       -> do let serializedValue = _serializeFileBytes filestore value
@@ -185,7 +188,7 @@ storeAsFile filestore key value = do
                         -- - The file has been tampered with
                         -- - We have a hash collision
                         Left err
-                          -> pure . Left . EContext (EMsg . mconcat $
+                          -> pure . Left . mconcat $
                                [ text "When attempting to store a key-value in the filesystem store we encountered an existing file which did not deserialize as expected. This could indicate:"
                                , lineBreak
                                , text "- Serialization does not round trip correctly"
@@ -197,8 +200,9 @@ storeAsFile filestore key value = do
                                , text "The file in question is at path: "
                                , lineBreak
                                , string . show $ keyPath
-                               ])
-                               $ err
+                               , lineBreak
+                               , indent1 err
+                               ]
 
                         Right existingValue
                           | _valuesEqual filestore existingValue value
@@ -217,14 +221,16 @@ lookupFromFile
   :: Show k
   => FileStore k v
   -> k
-  -> IO (Either (ErrorFor phase) (FileStore k v, Maybe v))
+  -> IO (Either Doc (FileStore k v, Maybe v))
 lookupFromFile filestore key = do
   case generateFullPath key filestore of
     Left err
-      -> pure . Left . EContext (EMsg . mconcat $ [ text "File store cannot generate path for key:"
-                                                  , lineBreak
-                                                  ,  indent1 . string . show $ key
-                                                  ]) $ err
+      -> pure . Left . mconcat $ [ text "File store cannot generate path for key:"
+                                 , lineBreak
+                                 , indent1 . string . show $ key
+                                 , lineBreak
+                                 , indent1 err
+                                 ]
 
     Right keyPath
       -> do exists <- doesFileExist keyPath
@@ -233,7 +239,7 @@ lookupFromFile filestore key = do
               else do fileBytes <- readFile keyPath
                       case _deserializeFileBytes filestore fileBytes of
                         Left err
-                          -> pure . Left . EContext (EMsg . mconcat $
+                          -> pure . Left . mconcat $
                                [ text "File store cannot deserialize the file associated with a path to the expected value type:"
                                , lineBreak
                                , indent1 . mconcat $
@@ -251,8 +257,9 @@ lookupFromFile filestore key = do
                                    , lineBreak
                                    , indent1 . string . show $ fileBytes
                                    ]
-                               ])
-                               $ err
+                               , lineBreak
+                               , indent1 err
+                               ]
 
                         Right value
                           -> pure .  Right $ (filestore, Just value)

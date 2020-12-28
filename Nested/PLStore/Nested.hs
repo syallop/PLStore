@@ -29,11 +29,10 @@ module PLStore.Nested
 import Prelude hiding (lookup)
 
 -- PLStore
-import PL.Store
-import PL.ShortStore
+import PLStore
+import PLStore.Short
 
 -- Other PL
-import PL.Error
 import PLPrinter.Doc
 
 -- External
@@ -114,7 +113,7 @@ lookupNested
      )
   => NestedStore s s' k v
   -> k
-  -> IO (Either (ErrorFor phase) (NestedStore s s' k v, Maybe v))
+  -> IO (Either Doc (NestedStore s s' k v, Maybe v))
 lookupNested (NestedStore topStore nestedStore) key =
   lookup topStore key >>= \case
     Left err
@@ -175,7 +174,7 @@ storeNested
   => NestedStore s s' k v
   -> k
   -> v
-  -> IO (Either (ErrorFor phase) (NestedStore s s' k v, StoreResult v))
+  -> IO (Either Doc (NestedStore s s' k v, StoreResult v))
 storeNested (NestedStore topStore nestedStore) key value = lookup topStore key >>= \case
   Left err
     -> pure . Left $ err
@@ -293,7 +292,7 @@ storeNestedThenTop
   -> s' k v
   -> k
   -> v
-  -> IO (Either (ErrorFor phase) (NestedStore s s' k v, StoreResult v))
+  -> IO (Either Doc (NestedStore s s' k v, StoreResult v))
 storeNestedThenTop top nested key value =
   store nested key value >>= \case
     Left err
@@ -312,7 +311,7 @@ largerNestedKeys
   :: (ShortStore s' k shortK v)
   => NestedStore s s' k v
   -> shortK
-  -> IO (Either (ErrorFor phase) (NestedStore s s' k v, [k]))
+  -> IO (Either Doc (NestedStore s s' k v, [k]))
 largerNestedKeys (NestedStore top nested) shortKey = do
   -- TODO: If the interface was a stream/ returned batches of results and a continuation|done then
   -- We could query the top store first and potentially avoid touching the
@@ -337,7 +336,7 @@ shortenNestedKeys
      )
   => NestedStore s s' k v
   -> k
-  -> IO (Either (ErrorFor phase) (NestedStore s s' k v, shortK))
+  -> IO (Either Doc (NestedStore s s' k v, shortK))
 shortenNestedKeys (NestedStore top nested) key = do
   -- Algorithm:
   -- - Lookup shortest prefix in top
@@ -359,7 +358,7 @@ shortenNestedKeys (NestedStore top nested) key = do
                -> case nestedCandidateKeys of
                     -- Nested store doesn't know of any larger keys.
                     []
-                      -> pure . Left . EMsg . mconcat $
+                      -> pure . Left . mconcat $
                            [ text "In a nested Store the top-level shortened a key to a value which has no larger keys in the nested store."
                            , lineBreak
                            , text "This implies bad data in the top store or that the nested store has suffered data loss."

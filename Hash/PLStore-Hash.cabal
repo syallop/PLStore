@@ -1,6 +1,6 @@
-name:                PLStore-File
+name:                PLStore-Hash
 version:             0.1.0.0
-synopsis:            Definitions for storing PL values in the file system
+synopsis:            A Store that uses a values hashes as their keys.
 description:
 -- license:             
 author:              Samuel A. Yallop
@@ -11,9 +11,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     PLStore.File
-                     , PLStore.File.Path
-
+  exposed-modules:     PLStore.Hash
   -- other-modules:       
   other-extensions:    OverloadedStrings
                      , GeneralizedNewtypeDeriving
@@ -23,6 +21,7 @@ library
                      , containers >=0.5
 
                      , PLStore
+                     , PLHash
                      , PLGrammar  >= 0.4
                      , PLPrinter  >= 0.3
                      , Reversible >= 0.1
@@ -51,35 +50,4 @@ library
 
   ghc-options: -threaded -rtsopts
   ghc-options: -fwarn-incomplete-patterns -Werror=incomplete-patterns
-
-test-suite hspec
-  type:              exitcode-stdio-1.0
-  main-is:           Spec.hs
-  hs-source-dirs:    Test
-
-  other-modules:     PLStore.Test.File.PathSpec
-
-  build-depends:     base >=4.7
-                   , PLStore
-                   , PLStore-File
-                   , PLHash
-                   , PLGrammar  >= 0.4
-                   , PLPrinter  >= 0.3
-                   , Reversible >= 0.1
-
-                   , QuickCheck
-                   , containers >=0.5
-                   , hedgehog
-                   , hspec
-                   , bytestring
-                   , quickcheck-instances
-                   , semigroups
-                   , text
-                   , ghc-prim
-
-  default-language:  Haskell2010
-  ghc-options: -threaded -rtsopts
-  other-extensions:  OverloadedStrings
-                   , GeneralizedNewtypeDeriving
-                   , LambdaCase
 
