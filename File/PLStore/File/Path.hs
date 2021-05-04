@@ -34,6 +34,8 @@ module PLStore.File.Path
   )
   where
 
+import Prelude hiding (break)
+
 -- PL
 import PLGrammar
 import PLPrinter.Doc
@@ -44,7 +46,6 @@ import Reversible.Iso
 import Control.Applicative
 import Control.Monad
 import Data.Text (Text)
-import qualified Data.List as List
 import qualified Data.Text as Text
 
 -- TODO: Consider how much of the prefix/ length/ breaking logic can be moved/ belongs in
@@ -89,15 +90,15 @@ segmented
   :: Int
   -> Int
   -> PathPattern Text
-segmented total break = segmented' total break
+segmented total breakEvery = segmented' total breakEvery
   where
   segmented' :: Int -> Int -> Grammar Text
   segmented' 0           _break = textIs "/" */ rpure ""
-  segmented' totalLength 0      = charIs '/' */ segmented' totalLength break
-  segmented' totalLength break  = consIso \$/ (charWhen (/= '/')) \*/ (segmented' (totalLength-1) (break-1))
+  segmented' totalLength 0      = charIs '/' */ segmented' totalLength breakEvery
+  segmented' totalLength break  = textConsIso \$/ (charWhen (/= '/')) \*/ (segmented' (totalLength-1) (break-1))
 
-  consIso :: Iso (Char,Text) Text
-  consIso = Iso
+  textConsIso :: Iso (Char,Text) Text
+  textConsIso = Iso
     { _forwards = \(c,t) -> Just . Text.cons c $ t
     , _backwards = \t -> Text.uncons t
     }
@@ -114,7 +115,7 @@ generatePath k pattern =
 
 -- A PathGenerator transforms some key into a possible path where it can be
 -- stored.
-newtype PathGenerator k = PathGenerator (forall phase. k -> Either Doc Text)
+newtype PathGenerator k = PathGenerator (k -> Either Doc Text)
 
 -- Convert a PathPattern into a Generator by interpreting it 'backwards'.
 toPathGenerator
@@ -128,10 +129,11 @@ toPathGenerator (Reversible g) = case g of
            -> PathGenerator $ \k -> Right $ Text.singleton k
 
          -- TODO:
-         GLabel _ g
-           -> toPathGenerator g
-         GTry g
-           -> toPathGenerator g
+         GLabel _ labelledG
+           -> toPathGenerator labelledG
+
+         GTry possibleG
+           -> toPathGenerator possibleG
 
   RPure a
     -> PathGenerator $ \a' -> if a == a'
@@ -157,8 +159,9 @@ toPathGenerator (Reversible g) = case g of
     -> PathGenerator $ \a -> let PathGenerator p = toPathGenerator g0
                                  PathGenerator q = toPathGenerator g1
                               in case p a of
-                                   Left err
+                                   Left _err
                                      -> q a
+
                                    Right x
                                      -> Right x
 
@@ -255,15 +258,15 @@ toPathReader (Reversible g) = case g of
                 Just (c,txt')
                   -> (txt',Just c)
 
-         GLabel _ g
-           -> PathReader $ \txt -> case runPathReader txt (toPathReader g) of
+         GLabel _ labelledG
+           -> PathReader $ \txt -> case runPathReader txt (toPathReader labelledG) of
                 (leftovers,Nothing)
                   -> (leftovers,Nothing)
                 (leftovers,Just a)
                   -> (leftovers,Just a)
 
-         GTry g
-           -> PathReader $ \txt ->  case runPathReader txt (toPathReader g) of
+         GTry possibleG
+           -> PathReader $ \txt ->  case runPathReader txt (toPathReader possibleG) of
                 (_leftovers,Nothing)
                   -> (txt,Nothing)
                 (leftovers,Just a)

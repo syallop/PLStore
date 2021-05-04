@@ -47,18 +47,6 @@ import PLHash
 import PLHash.Short
 import PLPrinter
 
--- Other
-import Data.Map (Map)
-import Data.Maybe
-import Data.Set (Set)
-import Data.Text
-import Data.Text.Encoding
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Base58 as B58
-import qualified Data.Map as Map
-import qualified Data.Set as Set
-import qualified Data.Text as Text
-
 -- | Store values 'v' by their 'Hash' in some underlying 'Store'.
 data HashStore v
   = forall s
@@ -161,5 +149,5 @@ shortenHash
   :: HashStore v
   -> Hash
   -> IO (Either Doc (HashStore v, ShortHash))
-shortenHash (HashStore s) hash = fmap (\(s',shortHash) -> (HashStore s',shortHash)) <$> shortenKey s hash
+shortenHash (HashStore s) h = fmap (\(s',shortHash) -> (HashStore s',shortHash)) <$> shortenKey s h
 

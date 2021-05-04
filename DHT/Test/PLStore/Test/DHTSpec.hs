@@ -36,7 +36,7 @@ deserialize = either (\unicodeErr
             . decodeUtf8'
 
 newTestDHT :: IO TestDHTStore
-newTestDHT = newDHTStore serialize serialize deserialize
+newTestDHT = newDHTStore serialize serialize deserialize (Just (putStrLn . ("Log: " <>)))
 
 testLookup :: TestDHTStore -> TestKey -> IO (Either Doc (Maybe TestValue))
 testLookup dht key = lookupInDHT dht key

@@ -87,7 +87,7 @@ hashGrammar = hashIso \$/ (alg \* charIs '/')
   where
     hashIso :: Iso (HashAlgorithm, Text) Hash
     hashIso = Iso
-      {_forwards  = \(alg,bytes) -> either (const Nothing) Just . mkBase58 alg $ bytes
+      {_forwards  = \(algorithm,bytes) -> either (const Nothing) Just . mkBase58 algorithm $ bytes
       ,_backwards = Just . unBase58
       }
 
@@ -109,16 +109,13 @@ hashGrammar = hashIso \$/ (alg \* charIs '/')
 
     takeNWhen :: Int -> (Char -> Bool) -> Grammar Text
     takeNWhen 0 _    = rpure ""
-    takeNWhen n pred = consIso \$/ charWhen pred \*/ takeNWhen (n-1) pred
+    takeNWhen n predicate = textConsIso \$/ charWhen predicate \*/ takeNWhen (n-1) predicate
 
-    consIso :: Iso (Char,Text) Text
-    consIso = Iso
+    textConsIso :: Iso (Char,Text) Text
+    textConsIso = Iso
       { _forwards = \(c,t) -> Just . Text.cons c $ t
       , _backwards = \t -> Text.uncons t
       }
-
-    hashCharacter :: Grammar Char
-    hashCharacter = charWhen isHashCharacter
 
     isHashCharacter :: Char -> Bool
     isHashCharacter = (`elem` hashCharacters)

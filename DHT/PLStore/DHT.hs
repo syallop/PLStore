@@ -19,6 +19,7 @@ PLStore backed by a Distributed HashTable.
 module PLStore.DHT
   ( DHTStore ()
   , newDHTStore
+  , shutdownDHT
   , storeInDHT
   , lookupInDHT
   , logInDHT
@@ -27,30 +28,21 @@ module PLStore.DHT
 
 -- PLStore
 import PLStore
+import PLStore.Short
 
 import DHT
 import DHT.Core
 import DHT.SimpleNode
 
 import PLPrinter.Doc
-import Reversible.Iso
 
 -- External
 import Control.Monad
 import Control.Concurrent
-import Data.ByteString (readFile, writeFile)
 import qualified Data.ByteString      as Strict
 import qualified Data.ByteString.Lazy.Char8 as Lazy
-import Data.Foldable
-import Data.Map (Map)
-import Data.Set (Set)
 import Data.Text (Text)
-import Data.Text.Encoding
-import qualified Data.List as List
-import qualified Data.Map as Map
-import qualified Data.Set as Set
 import qualified Data.Text as Text
-import           Data.Time.Clock.POSIX
 
 {- The implementation assumes that all store/ lookup commands must be made
    within the same DHT computation to produce a sane result and therefore:
@@ -75,6 +67,9 @@ data DHTStore k v = DHTStore
   , _hashSize            :: Int
   }
 
+instance Show (DHTStore k v) where
+  show _ = "DHTStore"
+
 -- | Create a new store backed by a Distributed HashTable that will handle
 -- commands until it is asked to close.
 newDHTStore
@@ -83,18 +78,18 @@ newDHTStore
   => (k -> Strict.ByteString)
   -> (v -> Strict.ByteString)
   -> (Strict.ByteString -> Either Doc v)
+  -> Maybe (String -> IO ())
   -> IO (DHTStore k v)
-newDHTStore serializeKey serializeValue deserializeValue = do
+newDHTStore serializeKey serializeValue deserializeValue logging = do
   -- Hardcode some configuration
-  let ourAddress        = fromParts (IPV4 "127.0.0.1") [UDP 6470]
-      hashSize          = 8
-      logging           = Just (putStrLn . ("LOG: " <>))
+  let ourIPAddress      = fromParts (IPV4 "127.0.0.1") [UDP 6470]
+      sharedHashSize    = 256
       mBootstrapAddress = Nothing
 
   -- TODO: The 'SimpleNode' implementation is a loosely tested example
   -- implementation, we should replace.
   simpleNodeConfig
-    <- mkSimpleNodeConfig ourAddress hashSize logging mBootstrapAddress
+    <- mkSimpleNodeConfig ourIPAddress sharedHashSize logging mBootstrapAddress
 
   -- Channel on which DHTStoreRequest's will be sent
   eventChan
@@ -107,12 +102,12 @@ newDHTStore serializeKey serializeValue deserializeValue = do
         , _serializeDHTValue   = serializeValue
         , _deserializeDHTValue = deserializeValue
 
-        , _hashSize = hashSize
+        , _hashSize = sharedHashSize
         }
 
   -- Handle dht operations in a new thread until a shutdown command is read from
   -- the eventChan.
-  forkIO . void . newSimpleNode simpleNodeConfig . handleDHTCommands $ dhtStore
+  _ <- forkIO . void . newSimpleNode simpleNodeConfig . handleDHTCommands $ dhtStore
 
   pure dhtStore
 
@@ -122,14 +117,31 @@ instance Store DHTStore k v where
   store  s k v = fmap (s,) <$> storeInDHT s k v
   lookup s k   = fmap (s,) <$> lookupInDHT s k
 
--- TODO: DHT's are not expected to (efficiently) be able to shorten keys.
--- - Should we be able to signal that we can't implement?
--- - Can we implement 'shorten' by not, and 'larger' by performing some query?
--- instance ShortStore
+-- DHT's cannot currently (efficiently) shorten/ largen keys.
+-- For now, these will be a no-op.
+--
+-- The impact is:
+-- 1. Long keys will never be shortened.
+-- 2. Any key which is not present in another store, cannot be resolved by short key.
+--    This is _okay_ as long as:
+--    - Memory/ file based stores are used in conjunction.
+--    - These stores don't have eviction functionality implemented.
+--    - Users retain long keys as the canonical form.
+--    - Short keys are sourced from recent user storage
+-- If any of those properties become untrue, short-keys will degrade to long keys.
+--
+-- For the PL user, these properties currently hold. The main drawback is that
+-- externally discovered short-hashes cannot be resolved.
+--
+-- TODO: Add commands for shortening/ lengthening to the DHT/ change the
+-- behaviour/ guarantees of nesting stores.
+instance Shortable key shortKey => ShortStore DHTStore key shortKey v where
+  largerKeys s _shortKey = pure . Right . (s,) $ []
+  shortenKey s key       = pure . Right . (s,) . toShort $ key
 
 -- A request to the dht store is a command that should return some response
 -- value 'r' by writing it to the provided response mvar.
-data DHTStoreRequest k v = forall phase r. DHTStoreRequest
+data DHTStoreRequest k v = forall r. DHTStoreRequest
   { _responseMVar   :: MVar (Either Doc r) -- ^ Space in which to write the response that can be waited upon.
   , _requestCommand :: DHTStoreCommand k v r
   }
@@ -168,15 +180,21 @@ handleDHTCommands dhtStore = do
   case cmd of
     ShutdownDHT
       -> do lg "shutting down DHT"
+            -- TODO:
+            -- - Consider attempting to process remaining commands in the
+            --   queue.
+            -- - Consider properly releasing the nodes tcp port.
             liftDHT $ putMVar response (Right ())
 
     LookupDHT key
       -> do emValue <- handleLookup key dhtStore
             case emValue of
               Left err
-                -> lg "Error from handleLookup: "
-              Right mValue
+                -> lg $ "Error from handleLookup: " <> (Text.unpack . render . document $ err)
+
+              Right _mValue
                 -> lg "Success from handleLookup"
+
             liftDHT $ putMVar response emValue
             handleDHTCommands dhtStore
 
@@ -190,6 +208,15 @@ handleDHTCommands dhtStore = do
     LogDHT msg
       -> do lg (Text.unpack msg)
             handleDHTCommands dhtStore
+
+-- | Shutdown the DHT, running any relevant cleanup actions.
+shutdownDHT
+  :: DHTStore k v
+  -> IO (Either Doc ())
+shutdownDHT dhtStore = do
+  response <- newEmptyMVar
+  writeChan (_eventChan dhtStore) $ DHTStoreRequest response $ ShutdownDHT
+  takeMVar response
 
 -- | Retrieve a key-value association from a Distributed HashTable.
 lookupInDHT

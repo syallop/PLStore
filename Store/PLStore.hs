@@ -30,15 +30,7 @@ import Prelude hiding (lookup)
 
 import PLPrinter.Doc
 
-import Data.Text (Text)
-
-import Data.Map (Map)
-import qualified Data.Map as Map
 import Data.Set (Set)
-import qualified Data.Set as Set
-import Data.Monoid
-
-import qualified Data.ByteString as BS
 
 -- | The result of successfully storing something is a StoreResult.
 data StoreResult v

@@ -40,23 +40,16 @@ import PLPrinter.Doc
 import Reversible.Iso
 
 -- External
-import Control.Monad
 import Data.ByteString (ByteString, readFile, writeFile)
-import Data.Foldable
-import Data.Map (Map)
-import Data.Set (Set)
 import Data.Text (Text)
 import Data.Text.Encoding
-import Data.Traversable
 import System.Directory
 import System.Directory.Tree (
     AnchoredDirTree(..), DirTree(..),
     filterDir, readDirectoryWith
     )
-import System.FilePath (takeExtension)
 import System.FilePath.ByteString
 import qualified Data.List as List
-import qualified Data.Map as Map
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
@@ -103,8 +96,8 @@ newSimpleFileStore
   -> Int           -- ^ Fix key length
   -> Text
   -> FileStore k v
-newSimpleFileStore subDirs serializeKey deserializeKey serializeBytes deserializeBytes keyLength fileName =
-  newFileStore subDirs (mkPathPattern iso keyLength fileName) serializeBytes deserializeBytes (==)
+newSimpleFileStore subDirs serializeKey deserializeKey serializeBytes deserializeBytes keyLength filePath =
+  newFileStore subDirs (mkPathPattern iso keyLength filePath) serializeBytes deserializeBytes (==)
   where
     iso :: Iso Text k
     iso = Iso
@@ -146,8 +139,8 @@ generateFullPath
   -> FileStore k v
   -> Either Doc FilePath
 generateFullPath key f = case generatePath key (_filePattern f) of
-  Left err
-    -> Left err
+  Left e
+    -> Left e
 
   Right path
     -> Right $ baseDirectory f <> path
@@ -165,12 +158,12 @@ storeAsFile
 storeAsFile filestore key value = do
   -- TODO: Consider mapping relevant filesystem exceptions to Nothing.
   case generateFullPath key filestore of
-    Left err
+    Left e
       -> pure . Left . mconcat $ [ text "File store cannot generate path for key:"
                                  , lineBreak
                                  , indent1 . string . show $ key
                                  , lineBreak
-                                 , indent1 err
+                                 , indent1 e
                                  ]
 
     Right keyPath
@@ -187,7 +180,7 @@ storeAsFile filestore key value = do
                         -- - Serialization does not round trip correctly
                         -- - The file has been tampered with
                         -- - We have a hash collision
-                        Left err
+                        Left e
                           -> pure . Left . mconcat $
                                [ text "When attempting to store a key-value in the filesystem store we encountered an existing file which did not deserialize as expected. This could indicate:"
                                , lineBreak
@@ -201,7 +194,7 @@ storeAsFile filestore key value = do
                                , lineBreak
                                , string . show $ keyPath
                                , lineBreak
-                               , indent1 err
+                               , indent1 e
                                ]
 
                         Right existingValue
@@ -224,12 +217,12 @@ lookupFromFile
   -> IO (Either Doc (FileStore k v, Maybe v))
 lookupFromFile filestore key = do
   case generateFullPath key filestore of
-    Left err
+    Left e
       -> pure . Left . mconcat $ [ text "File store cannot generate path for key:"
                                  , lineBreak
                                  , indent1 . string . show $ key
                                  , lineBreak
-                                 , indent1 err
+                                 , indent1 e
                                  ]
 
     Right keyPath
@@ -238,7 +231,7 @@ lookupFromFile filestore key = do
               then pure . Right $ (filestore, Nothing)
               else do fileBytes <- readFile keyPath
                       case _deserializeFileBytes filestore fileBytes of
-                        Left err
+                        Left e
                           -> pure . Left . mconcat $
                                [ text "File store cannot deserialize the file associated with a path to the expected value type:"
                                , lineBreak
@@ -258,7 +251,7 @@ lookupFromFile filestore key = do
                                    , indent1 . string . show $ fileBytes
                                    ]
                                , lineBreak
-                               , indent1 err
+                               , indent1 e
                                ]
 
                         Right value
@@ -350,7 +343,7 @@ getAllKeys f = do
       Dir ('.':_) _
         -> False
 
-      File n _
+      File _ _
         -> True
       _ -> True
 
