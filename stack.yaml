@@ -1,4 +1,4 @@
-resolver: lts-15.11
+resolver: lts-17.8
 extra-package-dbs: []
 packages:
 # Interfaces for Store/ ShortStore
@@ -13,16 +13,22 @@ packages:
 extra-deps:
 - git: https://github.com/syallop/PLHash
   commit: 8b2c8d586f55813851740dc64e24677db42eef77
+
 - git: https://github.com/syallop/PLLabel
   commit: 9433cf7963e43b4df06f57939218956c3d2dacc4
+
 - git: https://github.com/syallop/Reversible
   commit: 5185a10559f0567ba927ea67a0b90f446d87dbe3
+
 - git: https://github.com/syallop/DSL-Compose.git
   commit: 5a95ae855f3291aa3193a7424892035226b10d2f
+
 - git: https://github.com/syallop/PLGrammar
   commit: ece33dda877ed6b2199ebc6528fdc825302b3978
+
 - git: https://github.com/syallop/PLPrinter
   commit: 29c1fc4fe5f33086bed4855e016aa56aa80264af
+
 - git: https://github.com/syallop/DHT
   commit: a376cf5a423f50212cfd856dcf733eb5177fc00c
   subdirs:
