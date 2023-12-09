@@ -1,3 +1,4 @@
+cabal-version:       3.8
 name:                PLStore-DHT
 version:             0.1.0.0
 synopsis:            Definitions for storing PL values in a Distributed Hash Table.
@@ -8,7 +9,6 @@ maintainer:          syallop@gmail.com
 copyright:           Samuel A. Yallop
 category:            PL
 build-type:          Simple
-cabal-version:       >=1.10
 
 library
   exposed-modules:     PLStore.DHT
@@ -24,8 +24,8 @@ library
                      , PLGrammar  >= 0.4
                      , PLPrinter  >= 0.3
                      , Reversible >= 0.1
-                     , DHT        >= 0.3
-                     , DHT-SimpleNode >= 0.3
+                     , DHT        >= 0.5
+                     , DHT-SimpleNode >= 0.5
 
                      , memory
                      , time

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE LambdaCase #-}
 module PLStore.Test.File.PathSpec where
 
 import Test.Hspec
@@ -79,7 +80,10 @@ spec = do
                      "Single example"
                      "SHA512/BAt7JLYgp8oAyt15RSTiA6QQGW3nHjU8/X7cUEDkYo3hbXGnXFLMBPJuEc3fKnzgTfwZose7cr1drceZsZ85npzbVhZ7HtGjUPZDX4vcLzm7k9Une8PbYchSLhKDUyptqYuRMaWJMSsGuKMPqcXeSw6rT58mtXeQnvTTuiJ9z9YbKxMW/filename"
                      (hashGrammar \* (charIs '/' */ textIs "filename"))
-                     ("", (\(Right h) -> Just h) . mkBase58 SHA512 $ "BAt7JLYgp8oAyt15RSTiA6QQGW3nHjU8X7cUEDkYo3hbXGnXFLMBPJuEc3fKnzgTfwZose7cr1drceZsZ85npzbVhZ7HtGjUPZDX4vcLzm7k9Une8PbYchSLhKDUyptqYuRMaWJMSsGuKMPqcXeSw6rT58mtXeQnvTTuiJ9z9YbKxMW")
+                     (""
+                     , (\case
+                          Right h -> Just h
+                          _ -> error "cannot mkBase58 hash in test setup") . mkBase58 SHA512 $ "BAt7JLYgp8oAyt15RSTiA6QQGW3nHjU8X7cUEDkYo3hbXGnXFLMBPJuEc3fKnzgTfwZose7cr1drceZsZ85npzbVhZ7HtGjUPZDX4vcLzm7k9Une8PbYchSLhKDUyptqYuRMaWJMSsGuKMPqcXeSw6rT58mtXeQnvTTuiJ9z9YbKxMW")
 
 hashGrammar :: PathPattern Hash
 hashGrammar = hashIso \$/ (alg \* charIs '/')

@@ -1,4 +1,4 @@
-resolver: lts-17.8
+resolver: lts-21.24
 extra-package-dbs: []
 packages:
 # Interfaces for Store/ ShortStore
@@ -12,25 +12,25 @@ packages:
 - Hash
 extra-deps:
 - git: https://github.com/syallop/PLHash
-  commit: 8b2c8d586f55813851740dc64e24677db42eef77
+  commit: 07ba8651a6839bd44e2e38d4d1c837d3fc22af4b
 
 - git: https://github.com/syallop/PLLabel
-  commit: 9433cf7963e43b4df06f57939218956c3d2dacc4
+  commit: d0f17cf627c28e005d02e13a69a74ccd615cc9d1
 
 - git: https://github.com/syallop/Reversible
-  commit: 5185a10559f0567ba927ea67a0b90f446d87dbe3
+  commit: 9ccb55ba11d7b82a53ed470040b50cac0ea12664
 
 - git: https://github.com/syallop/DSL-Compose.git
-  commit: 5a95ae855f3291aa3193a7424892035226b10d2f
+  commit: 74d87b23e7ac8063f25194b607049bd4c7c54f47
 
 - git: https://github.com/syallop/PLGrammar
-  commit: ece33dda877ed6b2199ebc6528fdc825302b3978
+  commit: d761d31bd2e332bae639ba2c2c73f873524c0e3e
 
 - git: https://github.com/syallop/PLPrinter
-  commit: 29c1fc4fe5f33086bed4855e016aa56aa80264af
+  commit: 74fd1a684542f9f876753e2d7b3b0d5609bf385e
 
 - git: https://github.com/syallop/DHT
-  commit: a376cf5a423f50212cfd856dcf733eb5177fc00c
+  commit: dfb4627ca4c267db6401fa080ce73f0b8ff7b310
   subdirs:
     - .
     - Examples/DHT-SimpleNode

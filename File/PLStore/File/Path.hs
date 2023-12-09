@@ -216,12 +216,10 @@ instance Functor PathReader where
       -> (leftovers,Nothing)
 
 instance Applicative PathReader where
-  pure  = return
-  (<*>) = ap
+  pure a = PathReader $ \txt -> (txt, Just a)
+  (<*>)  = ap
 
 instance Monad PathReader where
-  return a = PathReader $ \txt -> (txt, Just a)
-
   (PathReader pa) >>= f = PathReader $ \txt -> case pa txt of
     (leftovers, Nothing)
       -> (leftovers, Nothing)
